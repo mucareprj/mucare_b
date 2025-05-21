@@ -33,6 +33,10 @@ public class LoginController {
     private static final String CLIENT_ID = "70a5316ede9855bd6e30b4369e792aa1";
     private static final String REDIRECT_URI = "http://localhost:3000/oauth/kakao/callback";
 
+    // Naver OAuth constants
+    private static final String NAVER_CLIENT_ID = "LzQBtRpOwZ_C67N5GxsG";
+    private static final String NAVER_CLIENT_SECRET = "BIHFPB7sNL";
+
     
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials, HttpSession session) {
@@ -120,6 +124,70 @@ public class LoginController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "result", "fail",
                     "message", "카카오 로그인 중 오류 발생"
+            ));
+        }
+    }
+
+    @PostMapping("/oauth/naver")
+    public ResponseEntity<?> naverLogin(@RequestBody Map<String, String> body, HttpSession session) {
+        try {
+            String code = body.get("code");
+            String state = body.get("state");
+
+            HttpHeaders tokenHeaders = new HttpHeaders();
+            tokenHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            String tokenBody = "grant_type=authorization_code"
+                    + "&client_id=" + NAVER_CLIENT_ID
+                    + "&client_secret=" + NAVER_CLIENT_SECRET
+                    + "&code=" + code;
+            if (state != null) {
+                tokenBody += "&state=" + state;
+            }
+
+            HttpEntity<String> tokenRequest = new HttpEntity<>(tokenBody, tokenHeaders);
+
+            ResponseEntity<String> tokenResponse = restTemplate.postForEntity(
+                    URI.create("https://nid.naver.com/oauth2.0/token"),
+                    tokenRequest,
+                    String.class
+            );
+
+            JsonNode tokenJson = objectMapper.readTree(tokenResponse.getBody());
+            String accessToken = tokenJson.get("access_token").asText();
+
+            HttpHeaders userHeaders = new HttpHeaders();
+            userHeaders.setBearerAuth(accessToken);
+
+            HttpEntity<Void> userRequest = new HttpEntity<>(userHeaders);
+
+            ResponseEntity<String> userResponse = restTemplate.exchange(
+                    URI.create("https://openapi.naver.com/v1/nid/me"),
+                    HttpMethod.GET,
+                    userRequest,
+                    String.class
+            );
+
+            JsonNode userJson = objectMapper.readTree(userResponse.getBody());
+            JsonNode responseNode = userJson.get("response");
+            String naverUserId = responseNode.get("id").asText();
+
+            session.setAttribute("LOGIN_USER", naverUserId);
+            session.setAttribute("userId", naverUserId);
+            session.setAttribute("loginMethod", "naver");
+            session.setAttribute("naverAccessToken", accessToken);
+
+            return ResponseEntity.ok(Map.of(
+                    "result", "success",
+                    "userId", naverUserId,
+                    "loginMethod", "naver"
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "result", "fail",
+                    "message", "네이버 로그인 중 오류 발생"
             ));
         }
     }
