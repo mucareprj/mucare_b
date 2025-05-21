@@ -238,9 +238,29 @@ public class LoginController {
     }
 
     @PostMapping("/logout/naver")
-    public ResponseEntity<?> logout2(HttpSession session) {
+    public ResponseEntity<?> naverLogout(HttpSession session) {
+        String accessToken = (String) session.getAttribute("naverAccessToken");
+        if (accessToken == null) {
+            session.invalidate();
+            return ResponseEntity.badRequest().body("Access token not found in session");
+        }
+
+        try {
+            String url = "https://nid.naver.com/oauth2.0/token?grant_type=delete"
+                    + "&client_id=" + NAVER_CLIENT_ID
+                    + "&client_secret=" + NAVER_CLIENT_SECRET
+                    + "&access_token=" + accessToken
+                    + "&service_provider=NAVER";
+
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            System.out.println("네이버 연결 끊기 결과: " + response.getBody());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         session.invalidate();
-        return ResponseEntity.ok(Map.of("result", "logout"));
+        return ResponseEntity.ok("네이버 로그아웃 완료");
     }
 
     @PostMapping("/logout/google")
