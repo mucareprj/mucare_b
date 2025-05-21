@@ -33,6 +33,10 @@ public class LoginController {
     private static final String CLIENT_ID = "70a5316ede9855bd6e30b4369e792aa1";
     private static final String REDIRECT_URI = "http://localhost:3000/oauth/kakao/callback";
 
+    // Naver OAuth credentials
+    private static final String NAVER_CLIENT_ID = "LzQBtRpOwZ_C67N5GxsG";
+    private static final String NAVER_CLIENT_SECRET = "BIHFPB7sNL";
+
     
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials, HttpSession session) {
@@ -124,6 +128,70 @@ public class LoginController {
         }
     }
 
+    @PostMapping("/oauth/naver")
+    public ResponseEntity<?> naverLogin(@RequestBody Map<String, String> body, HttpSession session) {
+        try {
+            String code = body.get("code");
+            String state = body.get("state");
+
+            HttpHeaders tokenHeaders = new HttpHeaders();
+            tokenHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            String tokenBody = "grant_type=authorization_code"
+                    + "&client_id=" + NAVER_CLIENT_ID
+                    + "&client_secret=" + NAVER_CLIENT_SECRET
+                    + "&code=" + code;
+            if (state != null) {
+                tokenBody += "&state=" + state;
+            }
+
+            HttpEntity<String> tokenRequest = new HttpEntity<>(tokenBody, tokenHeaders);
+
+            ResponseEntity<String> tokenResponse = restTemplate.postForEntity(
+                    URI.create("https://nid.naver.com/oauth2.0/token"),
+                    tokenRequest,
+                    String.class
+            );
+
+            JsonNode tokenJson = objectMapper.readTree(tokenResponse.getBody());
+            String accessToken = tokenJson.get("access_token").asText();
+
+            HttpHeaders userHeaders = new HttpHeaders();
+            userHeaders.setBearerAuth(accessToken);
+
+            HttpEntity<Void> userRequest = new HttpEntity<>(userHeaders);
+
+            ResponseEntity<String> userResponse = restTemplate.exchange(
+                    URI.create("https://openapi.naver.com/v1/nid/me"),
+                    HttpMethod.GET,
+                    userRequest,
+                    String.class
+            );
+
+            JsonNode userJson = objectMapper.readTree(userResponse.getBody());
+            JsonNode responseNode = userJson.get("response");
+            String naverUserId = responseNode.get("id").asText();
+
+            session.setAttribute("LOGIN_USER", naverUserId);
+            session.setAttribute("userId", naverUserId);
+            session.setAttribute("loginMethod", "naver");
+            session.setAttribute("naverAccessToken", accessToken);
+
+            return ResponseEntity.ok(Map.of(
+                    "result", "success",
+                    "userId", naverUserId,
+                    "loginMethod", "naver"
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "result", "fail",
+                    "message", "네이버 로그인 중 오류 발생"
+            ));
+        }
+    }
+
     
 
     @GetMapping("/session")
@@ -170,9 +238,29 @@ public class LoginController {
     }
 
     @PostMapping("/logout/naver")
-    public ResponseEntity<?> logout2(HttpSession session) {
+    public ResponseEntity<?> naverLogout(HttpSession session) {
+        String accessToken = (String) session.getAttribute("naverAccessToken");
+        if (accessToken == null) {
+            session.invalidate();
+            return ResponseEntity.badRequest().body("Access token not found in session");
+        }
+
+        try {
+            String url = "https://nid.naver.com/oauth2.0/token?grant_type=delete"
+                    + "&client_id=" + NAVER_CLIENT_ID
+                    + "&client_secret=" + NAVER_CLIENT_SECRET
+                    + "&access_token=" + accessToken
+                    + "&service_provider=NAVER";
+
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            System.out.println("네이버 연결 끊기 결과: " + response.getBody());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         session.invalidate();
-        return ResponseEntity.ok(Map.of("result", "logout"));
+        return ResponseEntity.ok("네이버 로그아웃 완료");
     }
 
     @PostMapping("/logout/google")
