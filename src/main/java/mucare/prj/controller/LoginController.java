@@ -37,6 +37,11 @@ public class LoginController {
     private static final String NAVER_CLIENT_ID = "LzQBtRpOwZ_C67N5GxsG";
     private static final String NAVER_CLIENT_SECRET = "BIHFPB7sNL";
 
+     // Google OAuth constants
+    private static final String GOOGLE_CLIENT_ID = "577683432334-gtn5qu78q0mqtuf5hh2mdc9r0qt4vrmu.apps.googleusercontent.com";
+    private static final String GOOGLE_CLIENT_SECRET = "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";
+    private static final String GOOGLE_REDIRECT_URI = "http://localhost:3000/oauth/google/callback";
+
     
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials, HttpSession session) {
@@ -192,7 +197,65 @@ public class LoginController {
         }
     }
 
-    
+    @PostMapping("/oauth/google")
+    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body, HttpSession session) {
+        try {
+            String code = body.get("code");
+
+            HttpHeaders tokenHeaders = new HttpHeaders();
+            tokenHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            String tokenBody = "grant_type=authorization_code"
+                    + "&client_id=" + GOOGLE_CLIENT_ID
+                    + "&client_secret=" + GOOGLE_CLIENT_SECRET
+                    + "&redirect_uri=" + GOOGLE_REDIRECT_URI
+                    + "&code=" + code;
+
+            HttpEntity<String> tokenRequest = new HttpEntity<>(tokenBody, tokenHeaders);
+
+            ResponseEntity<String> tokenResponse = restTemplate.postForEntity(
+                    URI.create("https://oauth2.googleapis.com/token"),
+                    tokenRequest,
+                    String.class
+            );
+
+            JsonNode tokenJson = objectMapper.readTree(tokenResponse.getBody());
+            String accessToken = tokenJson.get("access_token").asText();
+
+            HttpHeaders userHeaders = new HttpHeaders();
+            userHeaders.setBearerAuth(accessToken);
+
+            HttpEntity<Void> userRequest = new HttpEntity<>(userHeaders);
+
+            ResponseEntity<String> userResponse = restTemplate.exchange(
+                    URI.create("https://www.googleapis.com/oauth2/v1/userinfo?alt=json"),
+                    HttpMethod.GET,
+                    userRequest,
+                    String.class
+            );
+
+            JsonNode userJson = objectMapper.readTree(userResponse.getBody());
+            String googleUserId = userJson.get("id").asText();
+
+            session.setAttribute("LOGIN_USER", googleUserId);
+            session.setAttribute("userId", googleUserId);
+            session.setAttribute("loginMethod", "google");
+            session.setAttribute("googleAccessToken", accessToken);
+
+            return ResponseEntity.ok(Map.of(
+                    "result", "success",
+                    "userId", googleUserId,
+                    "loginMethod", "google"
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "result", "fail",
+                    "message", "구글 로그인 중 오류 발생"
+            ));
+        }
+    }
 
     @GetMapping("/session")
     public ResponseEntity<?> session(HttpSession session) {
@@ -264,9 +327,19 @@ public class LoginController {
     }
 
     @PostMapping("/logout/google")
-    public ResponseEntity<?> logout3(HttpSession session) {
+    public ResponseEntity<?> googleLogout(HttpSession session) {
+        String accessToken = (String) session.getAttribute("googleAccessToken");
+        if (accessToken != null) {
+            try {
+                String url = "https://oauth2.googleapis.com/revoke?token=" + accessToken;
+                restTemplate.postForEntity(url, null, String.class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         session.invalidate();
-        return ResponseEntity.ok(Map.of("result", "logout"));
+        return ResponseEntity.ok("구글 로그아웃 완료");
     }
     
 }
