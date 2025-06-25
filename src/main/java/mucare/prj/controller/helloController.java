@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class helloController {
     @GetMapping("/api/pb/hopesuccess")
     public String hello() {
-        return "성공기원 마음위로 화이팅!";
+        return "성공기원 마음위로 화이팅!!!!!";
     }
 }
