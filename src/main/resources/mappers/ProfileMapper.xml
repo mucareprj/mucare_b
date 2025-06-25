@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+  <mapper namespace="mucare.prj.mapper.ProfileMapper">
+    
+        <select id="selectProfileByUserId" resultType="mucare.prj.dto.ProfileDTO">
+        SELECT
+            user_id,
+            nickname,
+            name,
+            gender,
+            birth_date,
+            birth_time,
+            blood_type,
+            email
+        FROM users_profile
+        WHERE user_id = #{userId}
+    </select>
+
+    <insert id="insertProfile" parameterType="mucare.prj.dto.ProfileDTO">
+        INSERT INTO users_profile (user_id, nickname, name, gender, birth_date, birth_time, blood_type, email)
+        VALUES (#{userId}, #{nickname}, #{name}, #{gender}, #{birthDate}, #{birthTime}, #{bloodType}, #{email});
+    </insert>
+
+</mapper>

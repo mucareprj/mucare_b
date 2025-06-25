@@ -1,7 +1,6 @@
 package mucare.prj.controller;
 
 import java.net.URI;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,11 +78,14 @@ public class LoginController {
         session.setAttribute("LOGIN_USER", user.getId());
         session.setAttribute("loginMethod", "normal");
         session.setAttribute("userId", user.getId());
+        session.setAttribute("email", user.getEmail());
+
         session.setAttribute("lastLoginDateTime", user.getLastLogin());
 
         return ResponseEntity.ok(Map.of(
                 "result", "success",
                 "userId", user.getId(),
+                "email", user.getEmail(),
                 "loginMethod", "normal"));
 
     }
@@ -301,15 +303,17 @@ public class LoginController {
         String loginMethod = (String) session.getAttribute("loginMethod");
         boolean loggedIn = session.getAttribute("LOGIN_USER") != null;
         Object userId = session.getAttribute("userId");
-
-        System.out.println("로그인방식 : " + loginMethod + ", 사용자id : " + userId);
+        Object email = session.getAttribute("email");  
+        System.out.println("로그인방식 : " + loginMethod + ", 사용자id : " + userId + ", 이메일 : " + email);
 
         response.put("loggedIn", loggedIn);
         if (userId != null)
             response.put("userId", userId);
         if (loginMethod != null)
             response.put("loginMethod", loginMethod);
-
+        if (email != null) { 
+            response.put("email", email);
+        }
         return ResponseEntity.ok(response);
     }
 
