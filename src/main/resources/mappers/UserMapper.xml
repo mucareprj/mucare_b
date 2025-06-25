@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="mucare.prj.mapper.UserMapper">
+
+    <select id="selectUserByEmail" parameterType="java.lang.String" resultType="mucare.prj.domain.User">
+        SELECT id, email, password, created_at, last_login, is_active
+        FROM users
+        WHERE email = #{email}
+    </select>
+
+    <!-- provider + provider_id 로 사용자 조회 -->
+    <select id="findByProvider" parameterType="map" resultType="mucare.prj.domain.User">
+        SELECT *
+        FROM users
+        WHERE provider = #{provider}
+        AND provider_id = #{providerId}
+    </select>
+
+    <!-- 사용자 insert -->
+    <insert id="insertUser" parameterType="User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (email, password, provider, provider_id, created_at, is_active)
+        VALUES (#{email}, #{password}, #{provider}, #{providerId}, NOW(), 1)
+    </insert>
+
+    <update id="updateLastLogin" parameterType="java.lang.String">
+        UPDATE users SET last_login = NOW() WHERE email = #{email}
+    </update>
+
+    <update id="updateLastLoginByProvider">
+        UPDATE users
+        SET last_login = NOW()
+        WHERE provider = #{provider} AND provider_id = #{providerId}
+    </update>
+</mapper>
+
