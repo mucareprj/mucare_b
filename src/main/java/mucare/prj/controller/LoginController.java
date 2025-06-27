@@ -62,12 +62,12 @@ public class LoginController {
         User user = userService.findByEmail(email);
 
         if (user == null || user.getPassword() == null) {
-            log.info("존재하지 않는 사용자 : " + email );
+            log.info("존재하지 않는 사용자 : " + email);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("result", "fail", "message", "존재하지 않는 사용자입니다."));
-                
+
         }
-        
+
         if (!passwordEncoder.matches(pw, user.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("result", "fail", "message", "비밀번호가 일치하지 않습니다."));
@@ -152,7 +152,7 @@ public class LoginController {
             session.setAttribute("userId", user.getId());
             session.setAttribute("loginMethod", "kakao");
             session.setAttribute("kakaoAccessToken", accessToken);
-            session.setAttribute("EMAIL", email);
+            session.setAttribute("email", email);
             // session.setAttribute("NICKNAME", nickname);
 
             return ResponseEntity.ok(Map.of(
@@ -209,7 +209,20 @@ public class LoginController {
             JsonNode userJson = objectMapper.readTree(userResponse.getBody());
             JsonNode responseNode = userJson.get("response");
             String naverUserId = responseNode.get("id").asText();
+            String email = null;
 
+  
+            if (responseNode.has("email")) {
+                email = responseNode.get("email").asText();
+            }else {
+                // 이메일이 없으면 kakaoUserId를 이용해 임시 이메일 생성
+                email = "naver_" + naverUserId + "@noemail.com";
+            }
+            User user = userService.socialLoginOrRegister(email, "naver", String.valueOf(naverUserId));
+
+            userService.updateLastLoginByProvider("naver", String.valueOf(naverUserId));
+
+            session.setAttribute("email", email);
             session.setAttribute("LOGIN_USER", naverUserId);
             session.setAttribute("userId", naverUserId);
             session.setAttribute("loginMethod", "naver");
@@ -266,7 +279,6 @@ public class LoginController {
             JsonNode userJson = objectMapper.readTree(userResponse.getBody());
             String googleUserId = userJson.get("id").asText();
 
-            
             String email = userJson.get("email").asText();
             if (userJson.has("email")) {
                 email = userJson.get("email").asText();
@@ -278,7 +290,8 @@ public class LoginController {
             User user = userService.socialLoginOrRegister(email, "google", String.valueOf(googleUserId));
 
             userService.updateLastLoginByProvider("google", String.valueOf(googleUserId));
-            
+
+            session.setAttribute("email", email);
             session.setAttribute("LOGIN_USER", googleUserId);
             session.setAttribute("userId", googleUserId);
             session.setAttribute("loginMethod", "google");
@@ -303,7 +316,7 @@ public class LoginController {
         String loginMethod = (String) session.getAttribute("loginMethod");
         boolean loggedIn = session.getAttribute("LOGIN_USER") != null;
         Object userId = session.getAttribute("userId");
-        Object email = session.getAttribute("email");  
+        Object email = session.getAttribute("email");
         System.out.println("로그인방식 : " + loginMethod + ", 사용자id : " + userId + ", 이메일 : " + email);
 
         response.put("loggedIn", loggedIn);
@@ -311,7 +324,7 @@ public class LoginController {
             response.put("userId", userId);
         if (loginMethod != null)
             response.put("loginMethod", loginMethod);
-        if (email != null) { 
+        if (email != null) {
             response.put("email", email);
         }
         return ResponseEntity.ok(response);

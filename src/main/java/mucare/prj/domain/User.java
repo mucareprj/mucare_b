@@ -13,6 +13,7 @@ public class User {
     private Long id; // PK
     private String email; // E-mail UNIQUE
     private String password; // PW  
+    private String phoneNumber;
 
     private String provider; // 소셜 로그인 종류
     private String providerId; // 소셜 로그인 ID

@@ -14,14 +14,45 @@
             birth_date,
             birth_time,
             blood_type,
+            profile_image,
             email
+
         FROM users_profile
         WHERE user_id = #{userId}
     </select>
 
     <insert id="insertProfile" parameterType="mucare.prj.dto.ProfileDTO">
-        INSERT INTO users_profile (user_id, nickname, name, gender, birth_date, birth_time, blood_type, email)
-        VALUES (#{userId}, #{nickname}, #{name}, #{gender}, #{birthDate}, #{birthTime}, #{bloodType}, #{email});
+        INSERT INTO users_profile (user_id, nickname, name, gender, birth_date, birth_time, blood_type, profile_image, email)
+        VALUES (#{userId}, #{nickname}, #{name}, #{gender}, #{birthDate}, #{birthTime}, #{bloodType}, #{profileImage}, #{email});
     </insert>
 
+    <update id="updateProfileImage">
+        UPDATE users_profile
+        SET profile_image = #{imagePath}
+        WHERE user_id = #{userId}
+    </update>
+
+    <insert id="insertProfileImage">
+        INSERT INTO users_profile (user_id, profile_image)
+        VALUES (#{userId}, #{imagePath})
+    </insert>
+
+
+    <update id="updateProfile" parameterType="mucare.prj.dto.ProfileDTO">
+        UPDATE users_profile
+        SET
+        nickname = #{nickname},
+        name = #{name},
+        gender = #{gender},
+        birth_date = #{birthDate},
+        birth_time = #{birthTime},
+        blood_type = #{bloodType},
+        profile_image = #{profileImage},
+        email = #{email}
+        WHERE user_id = #{userId}
+    </update>
+    
+    <select id="existsByUserId" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM users_profile WHERE user_id = #{userId}
+    </select>
 </mapper>

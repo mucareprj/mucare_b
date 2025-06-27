@@ -1,17 +1,13 @@
 package mucare.prj.dto;
 
-
-
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
-public class SignupRequestDto {
-    
-
+@ToString
+public class PasswordResetDTO {
     private String email;
-    private String password;
-    private String phoneNumber;
-
+    private String newPassword;
 }

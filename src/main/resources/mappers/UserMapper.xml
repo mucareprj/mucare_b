@@ -5,6 +5,13 @@
   
 <mapper namespace="mucare.prj.mapper.UserMapper">
 
+
+    <select id="findById" parameterType="long" resultType="mucare.prj.domain.User">
+        SELECT id, email
+        FROM users
+        WHERE id = #{userId}
+    </select>
+
     <select id="selectUserByEmail" parameterType="java.lang.String" resultType="mucare.prj.domain.User">
         SELECT id, email, password, created_at, last_login, is_active
         FROM users
@@ -21,8 +28,8 @@
 
     <!-- 사용자 insert -->
     <insert id="insertUser" parameterType="User" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO users (email, password, provider, provider_id, created_at, is_active)
-        VALUES (#{email}, #{password}, #{provider}, #{providerId}, NOW(), 1)
+        INSERT INTO users (email, password, provider, provider_id, created_at, is_active, phone_number)
+        VALUES (#{email}, #{password}, #{provider}, #{providerId}, NOW(), 1, #{phoneNumber})
     </insert>
 
     <update id="updateLastLogin" parameterType="java.lang.String">
@@ -34,5 +41,26 @@
         SET last_login = NOW()
         WHERE provider = #{provider} AND provider_id = #{providerId}
     </update>
+
+    <select id="getPasswordByUserId" resultType="string">
+        SELECT password FROM users WHERE id = #{userId}
+    </select>
+
+    <update id="updatePassword">
+        UPDATE users SET password = #{newPassword} WHERE id = #{userId}
+    </update>
+
+    <update id="updatePasswordByEmail">
+        UPDATE users
+        SET password = #{newPassword}
+        WHERE email = #{email}
+    </update>
+
+    <select id="existsByEmailAndPhoneNumber" resultType="boolean" parameterType="map">
+        SELECT COUNT(*) > 0
+        FROM users
+        WHERE email = #{email}
+        AND phone_number = #{phoneNumber}
+    </select>
 </mapper>
 
