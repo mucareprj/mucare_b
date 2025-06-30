@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import mucare.prj.domain.User;
+import mucare.prj.domain.UserAgreement;
 import mucare.prj.dto.SignupRequestDto;
 import mucare.prj.mapper.UserMapper;
 
@@ -20,6 +21,11 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     public void signup(SignupRequestDto dto) {
+
+        if (userMapper.selectUserByEmail(dto.getEmail()) != null) {
+            throw new IllegalStateException("이미 존재하는 이메일입니다.");
+        }
+
         User user = new User();
 
         user.setEmail(dto.getEmail());
@@ -28,6 +34,15 @@ public class UserService {
         user.setProvider("normal");
         user.setPhoneNumber(dto.getPhoneNumber());
         userMapper.insertUser(user);
+
+        // 약관동의
+        UserAgreement agreement = new UserAgreement();
+        agreement.setId(user.getId());
+        agreement.setAgreeService(dto.getAgreeService());
+        agreement.setAgreePrivacy(dto.getAgreePrivacy());
+        agreement.setAgreeMarketing(dto.getAgreeMarketing());
+        userMapper.insertAgreement(agreement);
+
     }
 
     public User login(String email, String password) {

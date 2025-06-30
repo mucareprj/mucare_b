@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import mucare.prj.domain.User;
+import mucare.prj.domain.UserAgreement;
 
 @Mapper
 public interface UserMapper {
@@ -20,6 +21,8 @@ public interface UserMapper {
 
     int updateLastLoginByProvider(@Param("provider") String provider, @Param("providerId") String providerId);
 
+    // 약관동의
+    int insertAgreement(UserAgreement agreement);
     User findById(Long userId);
 
     String getPasswordByUserId(Long userId);
