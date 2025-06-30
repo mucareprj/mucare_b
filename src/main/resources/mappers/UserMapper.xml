@@ -32,6 +32,12 @@
         VALUES (#{email}, #{password}, #{provider}, #{providerId}, NOW(), 1, #{phoneNumber})
     </insert>
 
+    <!-- 약관동의 insert -->
+    <insert id="insertAgreement" parameterType="UserAgreement">
+        INSERT INTO user_agreements(id, agree_service, agree_privacy, agree_marketing)
+        VALUES (#{id}, #{agreeService}, #{agreePrivacy}, #{agreeMarketing})
+    </insert>
+
     <update id="updateLastLogin" parameterType="java.lang.String">
         UPDATE users SET last_login = NOW() WHERE email = #{email}
     </update>
