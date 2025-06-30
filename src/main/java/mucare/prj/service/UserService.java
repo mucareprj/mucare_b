@@ -32,6 +32,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setIsActive(true);
         user.setProvider("normal");
+        user.setPhoneNumber(dto.getPhoneNumber());
         userMapper.insertUser(user);
 
         // 약관동의
@@ -82,6 +83,10 @@ public class UserService {
         return userMapper.selectUserByEmail(email);
     }
 
+    public User findById(Long userId) {
+        return userMapper.findById(userId);
+    }
+
     public boolean checkPassword(String rawPassword, String encodedPassword) {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
@@ -97,5 +102,17 @@ public class UserService {
     // ## 회원가입 이메일 중복 검사
     public boolean isEmailExists(String email) {
         return userMapper.selectUserByEmail(email) != null;
+    }
+
+
+    // ## 비밀번호 찾기 이메일 , 휴대전화 번호 일치 검사
+    public boolean isEmailAndPhoneMatched(String email, String phoneNumber){
+        return userMapper.existsByEmailAndPhoneNumber(email, phoneNumber);
+    }
+
+    public boolean updatePasswordByEmail(String email, String newPassword) {
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        int updated = userMapper.updatePasswordByEmail(email, encodedPassword);
+        return updated > 0;
     }
 }

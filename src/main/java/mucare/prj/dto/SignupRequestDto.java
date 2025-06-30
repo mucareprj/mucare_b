@@ -12,6 +12,7 @@ public class SignupRequestDto {
 
     private String email;
     private String password;
+    private String phoneNumber;
 
     private Boolean agreeService;
     private Boolean agreePrivacy;

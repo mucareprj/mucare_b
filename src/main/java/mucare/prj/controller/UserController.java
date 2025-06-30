@@ -53,4 +53,11 @@ public class UserController {
         return ResponseEntity.ok(Map.of("exists", exists));
     }
 
+    @GetMapping("/match")
+    public ResponseEntity<Boolean> matchEmailAndPhone(@RequestParam("email") String email, @RequestParam("phoneNumber") String phoneNumber) {
+        boolean matched = userService.isEmailAndPhoneMatched(email, phoneNumber);
+        return ResponseEntity.ok(matched);
+    }
+    
+
 }
