@@ -129,6 +129,7 @@ public class LoginController {
 
             JsonNode userJson = objectMapper.readTree(userResponse.getBody());
             long kakaoUserId = userJson.get("id").asLong();
+            System.out.println("KAKAO USER RESPONSE: " + userResponse.getBody());
 
             JsonNode kakaoAccount = userJson.get("kakao_account");
             String email = null;
@@ -145,7 +146,7 @@ public class LoginController {
 
             // 3. 세션에 사용자 정보 저장
             User user = userService.socialLoginOrRegister(email, "kakao", String.valueOf(kakaoUserId));
-
+            System.out.println("✅ 생성된 user id: " + user.getId()); 
             userService.updateLastLoginByProvider("kakao", String.valueOf(kakaoUserId));
 
             session.setAttribute("LOGIN_USER", user);
@@ -210,7 +211,7 @@ public class LoginController {
             JsonNode responseNode = userJson.get("response");
             String naverUserId = responseNode.get("id").asText();
             String email = null;
-
+            System.out.println("NAVER USER RESPONSE: " + userResponse.getBody());
   
             if (responseNode.has("email")) {
                 email = responseNode.get("email").asText();
@@ -224,13 +225,13 @@ public class LoginController {
 
             session.setAttribute("email", email);
             session.setAttribute("LOGIN_USER", naverUserId);
-            session.setAttribute("userId", naverUserId);
+            session.setAttribute("userId", user.getId());
             session.setAttribute("loginMethod", "naver");
             session.setAttribute("naverAccessToken", accessToken);
 
             return ResponseEntity.ok(Map.of(
                     "result", "success",
-                    "userId", naverUserId,
+                    "userId", user.getId(),
                     "loginMethod", "naver"));
 
         } catch (Exception e) {
@@ -278,7 +279,7 @@ public class LoginController {
 
             JsonNode userJson = objectMapper.readTree(userResponse.getBody());
             String googleUserId = userJson.get("id").asText();
-
+            System.out.println("GOOGLE USER RESPONSE: " + userResponse.getBody());
             String email = userJson.get("email").asText();
             if (userJson.has("email")) {
                 email = userJson.get("email").asText();
@@ -293,13 +294,13 @@ public class LoginController {
 
             session.setAttribute("email", email);
             session.setAttribute("LOGIN_USER", googleUserId);
-            session.setAttribute("userId", googleUserId);
+            session.setAttribute("userId", user.getId());
             session.setAttribute("loginMethod", "google");
             session.setAttribute("googleAccessToken", accessToken);
 
             return ResponseEntity.ok(Map.of(
                     "result", "success",
-                    "userId", googleUserId,
+                    "userId", user.getId(),
                     "loginMethod", "google"));
 
         } catch (Exception e) {
